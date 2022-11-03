@@ -127,3 +127,12 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Datasets
+data/*/
+
+# Log
+logs/event*
+
+# Weight
+weights/*.pth
