@@ -1,3 +1,10 @@
+# import my packages and modules.
+import sys
+import os.path as osp
+sys.path.append(osp.dirname(osp.dirname(__file__)))
+from datasets.caltech256 import Caltech256
+from models.mobilenet_v1 import MobileNetV1
+import argparse
 import logging
 logging.basicConfig(level=logging.INFO)
 from tqdm import tqdm
@@ -7,11 +14,12 @@ from torch.utils.tensorboard import SummaryWriter
 from torch.utils.data import DataLoader, random_split
 from torchvision.transforms import Compose, Resize, Normalize, ToTensor
 
-import sys
-import os.path as osp
-sys.path.append(osp.dirname(osp.dirname(__file__)))
-from datasets.caltech256 import Caltech256
-from models.mobilenet_v1 import MobileNetV1
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--epoch', default=100, type=int, help='number of epochs.')
+    parser.add_argument('--batch_size', default=1, type=int, help='how many samples per batch to load.')
+
+    return parser.parse_args()
 
 def train_1epoch(
     model,
@@ -69,6 +77,9 @@ def validate_1epoch(
 
 
 if __name__ == '__main__':
+    # parse arguments.
+    args = parse_args()
+
     # check gpu availability.
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
@@ -90,8 +101,8 @@ if __name__ == '__main__':
     train_dataset, test_dataset = random_split(dataset, [n_train, n_test])
 
     # create dataloader.
-    train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
-    test_loader = DataLoader(test_dataset, batch_size=64, shuffle=True)
+    train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
+    test_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=True)
 
     # create model.
     model = MobileNetV1(257)

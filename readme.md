@@ -30,7 +30,7 @@ MobileNetV1/
 2. Execute `tools/train.py`.
 
 ```
-python tools/train.py
+python tools/train.py --epoch 100 --batch_size 64
 ```
 
 ## Reference
