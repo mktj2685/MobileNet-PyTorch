@@ -31,22 +31,21 @@ def train_1epoch(
     batch_acc = []
     batch_loss = []
     model.train()
-    with torch.enable_grad():
-        for data, target in dataloader:
-            optimizer.zero_grad()
-            data, target = data.to(device), target.to(device)
-            output = model(data)    # B x num_classes
-            loss = criterion(output, target)
-            loss.backward()
-            optimizer.step()
-            probs = torch.softmax(output, dim=1)
-            preds = probs.argmax(dim=1)
-            acc = torch.sum(preds == target)
-            batch_acc.append(acc)
-            batch_loss.append(loss)
+    for data, target in dataloader:
+        optimizer.zero_grad()
+        data, target = data.to(device), target.to(device)
+        output = model(data)    # B x num_classes
+        loss = criterion(output, target)
+        loss.backward()
+        optimizer.step()
+        probs = torch.softmax(output, dim=1)
+        preds = probs.argmax(dim=1)
+        acc = torch.sum(preds == target)
+        batch_acc.append(acc)
+        batch_loss.append(loss)
 
     avg_acc = sum(batch_acc) / len(batch_acc)
-    avg_loss = sum(batch_loss) / len(batch_loss)
+    avg_loss = 100. * sum(batch_loss) / len(dataloader)
 
     return avg_acc, avg_loss
 
@@ -71,7 +70,7 @@ def validate_1epoch(
             batch_loss.append(loss)
 
     avg_acc = sum(batch_acc) / len(batch_acc)
-    avg_loss = sum(batch_loss) / len(batch_loss)
+    avg_loss = 100. * sum(batch_loss) / len(dataloader)
 
     return avg_acc, avg_loss  
 
