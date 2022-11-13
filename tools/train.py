@@ -28,27 +28,24 @@ def train_1epoch(
     optimizer,
     device
 ):
-    batch_acc = []
-    batch_loss = []
+    epoch_acc = 0.
+    epoch_loss = 0.
     model.train()
-    with torch.enable_grad():
-        for data, target in dataloader:
-            optimizer.zero_grad()
-            data, target = data.to(device), target.to(device)
-            output = model(data)    # B x num_classes
-            loss = criterion(output, target)
-            loss.backward()
-            optimizer.step()
-            probs = torch.softmax(output, dim=1)
-            preds = probs.argmax(dim=1)
-            acc = torch.sum(preds == target)
-            batch_acc.append(acc)
-            batch_loss.append(loss)
+    for data, target in dataloader:
+        optimizer.zero_grad()
+        data, target = data.to(device), target.to(device)
+        output = model(data)
+        loss = criterion(output, target)
+        loss.backward()
+        optimizer.step()
+        probs = torch.softmax(output, dim=1)
+        preds = probs.argmax(dim=1)
+        epoch_acc += torch.sum(preds == target).item()
+        epoch_loss += loss.item()
+    epoch_acc = 100 * epoch_acc / len(dataloader.dataset)
+    epoch_loss = epoch_loss / len(dataloader)
 
-    avg_acc = sum(batch_acc) / len(batch_acc)
-    avg_loss = sum(batch_loss) / len(batch_loss)
-
-    return avg_acc, avg_loss
+    return epoch_acc, epoch_loss
 
 def validate_1epoch(
     model,
@@ -56,24 +53,21 @@ def validate_1epoch(
     criterion,
     device
 ):
-    batch_acc = []
-    batch_loss = []
+    epoch_acc = 0.
+    epoch_loss = 0.
     model.eval()
     with torch.no_grad():
         for data, target in dataloader:
             data, target = data.to(device), target.to(device)
             output = model(data)
-            loss = criterion(output, target)
             probs = torch.softmax(output, dim=1)
             preds = probs.argmax(dim=1)
-            acc = torch.sum(preds == target)
-            batch_acc.append(acc)
-            batch_loss.append(loss)
+            epoch_acc += torch.sum(preds == target).item()
+            epoch_loss += criterion(output, target).item()
+    epoch_acc = 100 * epoch_acc / len(dataloader.dataset)
+    epoch_loss = epoch_loss / len(dataloader)
 
-    avg_acc = sum(batch_acc) / len(batch_acc)
-    avg_loss = sum(batch_loss) / len(batch_loss)
-
-    return avg_acc, avg_loss  
+    return epoch_acc, epoch_loss  
 
 
 if __name__ == '__main__':
@@ -92,7 +86,6 @@ if __name__ == '__main__':
 
     # load dataset.
     dataset = Caltech256(trans_X)
-    dataloader = DataLoader(dataset)
 
     # split train and test.
     n = len(dataset)
@@ -120,8 +113,14 @@ if __name__ == '__main__':
     writer = SummaryWriter('logs')
     for i in tqdm(range(100)):
         train_acc, train_loss = train_1epoch(model, train_loader, criterion, optimizer, device)
-        val_acc, val_loss = validate_1epoch(model, train_loader, criterion, device)
-        logging.info(f'epoch:{i}, train loss:{train_loss}, train acc:{train_acc}, val loss{val_loss}, val acc:{val_acc}')
+        val_acc, val_loss = validate_1epoch(model, test_loader, criterion, device)
+        logging.info(
+            f'epoch:{i},                    \
+            train loss:{train_loss:.2f},    \
+            train acc:{train_acc:.2f},      \
+            val loss:{val_loss:.2f},        \
+            val acc:{val_acc:.2f}'
+        )
         writer.add_scalar('Acc/train', train_acc, i+1)
         writer.add_scalar('Acc/val', val_acc, i+1)
         writer.add_scalar('Loss/train', train_loss, i+1)
