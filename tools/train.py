@@ -28,26 +28,27 @@ def train_1epoch(
     optimizer,
     device
 ):
-    batch_acc = []
-    batch_loss = []
+    n_batch = 0
+    epoch_acc = 0
+    epoch_loss = 0
     model.train()
     for data, target in dataloader:
         optimizer.zero_grad()
         data, target = data.to(device), target.to(device)
-        output = model(data)    # B x num_classes
+        output = model(data)
         loss = criterion(output, target)
         loss.backward()
         optimizer.step()
         probs = torch.softmax(output, dim=1)
         preds = probs.argmax(dim=1)
-        acc = torch.sum(preds == target)
-        batch_acc.append(acc)
-        batch_loss.append(loss)
+        epoch_acc += torch.sum(preds == target).item()
+        epoch_loss += loss.item()
+        n_batch += 1
 
-    avg_acc = sum(batch_acc) / len(batch_acc)
-    avg_loss = 100. * sum(batch_loss) / len(dataloader)
+    epoch_acc = 100 * sum(epoch_acc) / len(dataloader.dataset)
+    epoch_loss = sum(epoch_loss) / n_batch
 
-    return avg_acc, avg_loss
+    return epoch_acc, epoch_loss
 
 def validate_1epoch(
     model,
@@ -55,24 +56,23 @@ def validate_1epoch(
     criterion,
     device
 ):
-    batch_acc = []
-    batch_loss = []
+    n_batch = 0
+    epoch_acc = 0
+    epoch_loss = 0
     model.eval()
     with torch.no_grad():
         for data, target in dataloader:
             data, target = data.to(device), target.to(device)
             output = model(data)
-            loss = criterion(output, target)
             probs = torch.softmax(output, dim=1)
             preds = probs.argmax(dim=1)
-            acc = torch.sum(preds == target)
-            batch_acc.append(acc)
-            batch_loss.append(loss)
+            epoch_acc += torch.sum(preds == target).item()
+            epoch_loss += criterion(output, target).item()
 
-    avg_acc = sum(batch_acc) / len(batch_acc)
-    avg_loss = 100. * sum(batch_loss) / len(dataloader)
+    epoch_acc = 100 * sum(epoch_acc) / len(dataloader)
+    epoch_loss = sum(epoch_loss) / n_batch
 
-    return avg_acc, avg_loss  
+    return epoch_acc, epoch_loss  
 
 
 if __name__ == '__main__':
