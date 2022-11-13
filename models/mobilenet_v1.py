@@ -15,7 +15,7 @@ class MobileNetV1(nn.Module):
             stride = 2
             padding = max(0, dilation * (kernel_size - 1) - (inp - 1) % stride)
             return nn.Sequential(
-                nn.Conv2d(inp, oup, 3, 2, padding),
+                nn.Conv2d(inp, oup, 3, 2, padding=padding, bias=False),
                 nn.BatchNorm2d(num_features=oup),
                 nn.ReLU()
             )
@@ -28,19 +28,18 @@ class MobileNetV1(nn.Module):
             return nn.Sequential(
                 # conv dw
                 # see https://pytorch.org/docs/stable/generated/torch.nn.Conv2d.html
-                nn.Conv2d(inp, inp, Dk, s, groups=inp, padding=padding),
+                nn.Conv2d(inp, inp, Dk, s, groups=inp, padding=padding, bias=False),
                 nn.BatchNorm2d(inp),
-                nn.ReLU(),
+                nn.ReLU(inplace=True),
 
                 # conv pw
-                nn.Conv2d(inp, oup, 1, 1),
+                nn.Conv2d(inp, oup, 1, 1, bias=False),
                 nn.BatchNorm2d(oup),
-                nn.ReLU()
+                nn.ReLU(inplace=True)
             )
-
+            
         self.layers = nn.Sequential(
             conv_bn(3, 32),
-
             conv_dw_sep(32, 64, 3, 1),
             conv_dw_sep(64, 128, 3, 2),
             conv_dw_sep(128, 128, 3, 1),
@@ -53,7 +52,6 @@ class MobileNetV1(nn.Module):
 
             nn.AvgPool2d(7)
         )
-
         self.fc = nn.Linear(in_features=1024, out_features=num_classes)
 
     def forward(self, x):

@@ -120,8 +120,16 @@ if __name__ == '__main__':
     writer = SummaryWriter('logs')
     for i in tqdm(range(100)):
         train_acc, train_loss = train_1epoch(model, train_loader, criterion, optimizer, device)
-        val_acc, val_loss = validate_1epoch(model, train_loader, criterion, device)
-        logging.info(f'epoch:{i}, train loss:{train_loss}, train acc:{train_acc}, val loss{val_loss}, val acc:{val_acc}')
+        val_acc, val_loss = validate_1epoch(model, test_loader, criterion, device)
+        logging.info(
+            f'''
+            epoch:{i+1},
+            train loss:{train_loss:.2f},
+            train acc:{train_acc:.2f},
+            val loss:{val_loss:.2f},
+            val acc:{val_acc:.2f}
+            '''
+        )
         writer.add_scalar('Acc/train', train_acc, i+1)
         writer.add_scalar('Acc/val', val_acc, i+1)
         writer.add_scalar('Loss/train', train_loss, i+1)
